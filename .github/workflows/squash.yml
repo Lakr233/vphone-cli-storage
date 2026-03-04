@@ -1,0 +1,28 @@
+name: Squash to root
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  squash:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check if squash needed
+        id: check
+        run: |
+          count=$(git rev-list --count HEAD)
+          echo "commit_count=$count" >> "$GITHUB_OUTPUT"
+      - name: Squash to single root commit
+        if: steps.check.outputs.commit_count > 1
+        run: |
+          git checkout --orphan temp
+          git add -A
+          git commit -m "resources"
+          git branch -M temp main
+          git push --force origin main
